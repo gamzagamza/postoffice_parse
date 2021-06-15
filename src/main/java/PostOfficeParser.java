@@ -13,9 +13,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class PostOfficeParser {
+/**
+ * 우체국 배송조회
+ */
+public class PostOfficeParser implements DeliveryParser {
 
-    public String htmlLookup(String sid) throws Exception {
+    private String htmlLookup(String sid) throws Exception {
         URL url = new URL("https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm");
         HttpURLConnection http = (HttpURLConnection) url.openConnection();
 
@@ -48,10 +51,12 @@ public class PostOfficeParser {
         return builder.toString();
     }
 
-    public List<ProgressVO> progressParse(String html) {
-        List<ProgressVO> progressList = new ArrayList<>();
+    @Override
+    public DeliveryTrackingVO progressParse(String sid) throws Exception {
+        DeliveryTrackingVO deliveryTrackingVO = new DeliveryTrackingVO();
+        deliveryTrackingVO.setProgressList(new ArrayList<>());
 
-        Document doc = Jsoup.parseBodyFragment(html);
+        Document doc = Jsoup.parseBodyFragment(htmlLookup(sid));
 
         // ---------------------------
         //    progress table parse
@@ -65,9 +70,17 @@ public class PostOfficeParser {
             progressVO.setTime(iterator.next().text());
             progressVO.setLocation(iterator.next().text());
             progressVO.setStatus(iterator.next().text());
-            progressList.add(progressVO);
+            deliveryTrackingVO.getProgressList().add(progressVO);
         }
 
-        return progressList;
+        if(deliveryTrackingVO.getProgressList() != null && !deliveryTrackingVO.getProgressList().isEmpty()) {
+            ProgressVO lastProgressVO = deliveryTrackingVO.getProgressList().get(deliveryTrackingVO.getProgressList().size() - 1);
+
+            if (lastProgressVO.getStatus().indexOf("배달완료") != -1) {
+                deliveryTrackingVO.setComplete(true);
+            }
+        }
+
+        return deliveryTrackingVO;
     }
 }
