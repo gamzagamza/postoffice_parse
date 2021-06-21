@@ -1,7 +1,12 @@
+package parser.po;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import parser.DeliveryParser;
+import parser.DeliveryTracking;
+import parser.Progress;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,7 +16,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * 우체국 배송조회
@@ -52,9 +56,9 @@ public class PostOfficeParser implements DeliveryParser {
     }
 
     @Override
-    public DeliveryTrackingVO progressParse(String sid) throws Exception {
-        DeliveryTrackingVO deliveryTrackingVO = new DeliveryTrackingVO();
-        deliveryTrackingVO.setProgressList(new ArrayList<>());
+    public DeliveryTracking progressParse(String sid) throws Exception {
+        DeliveryTracking deliveryTracking = new DeliveryTracking();
+        deliveryTracking.setProgressList(new ArrayList<>());
 
         Document doc = Jsoup.parseBodyFragment(htmlLookup(sid));
 
@@ -65,22 +69,22 @@ public class PostOfficeParser implements DeliveryParser {
         for(Element row : rows) {
             Iterator<Element> iterator = row.getElementsByTag("td").iterator();
 
-            ProgressVO progressVO = new ProgressVO();
-            progressVO.setDate(iterator.next().text());
-            progressVO.setTime(iterator.next().text());
-            progressVO.setLocation(iterator.next().text());
-            progressVO.setStatus(iterator.next().text());
-            deliveryTrackingVO.getProgressList().add(progressVO);
+            Progress progress = new Progress();
+            progress.setDate(iterator.next().text());
+            progress.setTime(iterator.next().text());
+            progress.setLocation(iterator.next().text());
+            progress.setStatus(iterator.next().text());
+            deliveryTracking.getProgressList().add(progress);
         }
 
-        if(deliveryTrackingVO.getProgressList() != null && !deliveryTrackingVO.getProgressList().isEmpty()) {
-            ProgressVO lastProgressVO = deliveryTrackingVO.getProgressList().get(deliveryTrackingVO.getProgressList().size() - 1);
+        if(deliveryTracking.getProgressList() != null && !deliveryTracking.getProgressList().isEmpty()) {
+            Progress lastProgress = deliveryTracking.getProgressList().get(deliveryTracking.getProgressList().size() - 1);
 
-            if (lastProgressVO.getStatus().indexOf("배달완료") != -1) {
-                deliveryTrackingVO.setComplete(true);
+            if (lastProgress.getStatus().indexOf("배달완료") != -1) {
+                deliveryTracking.setComplete(true);
             }
         }
 
-        return deliveryTrackingVO;
+        return deliveryTracking;
     }
 }

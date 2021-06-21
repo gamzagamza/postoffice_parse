@@ -1,4 +1,6 @@
-public class ProgressVO {
+package parser;
+
+public class Progress {
     private String date;
     private String time;
     private String location;
